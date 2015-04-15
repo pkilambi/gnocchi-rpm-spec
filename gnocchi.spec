@@ -1,83 +1,267 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 %global pypi_name gnocchi
+%global with_doc %{!?_without_doc:1}%{?_without_doc:0}
 
-Name:           gnocchi
-Version:	1.0.0a1
+Name:           openstack-gnocchi
+Version:	1.0.0a1.post94
+#Version:	1.0.0a1
 Release:	1%{?dist}
 Summary:        Gnocchi is a API to store metrics and index resources
 
 Group:		Development/Languages
-License:	Apache 2.0
+License:	APL 2.0
 URL:		http://github.com/openstack/gnocchi
 Source0:	https://pypi.python.org/packages/source/g/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+#Source0:        gnocchi-1.0.0a1.post94.tar.gz
+Source1:        %{pypi_name}-dist.conf
+Source2:        %{pypi_name}.conf.sample
 BuildArch:      noarch
 
 BuildRequires:	python-setuptools
+BuildRequires:  python-sphinx
+BuildRequires:  python-pbr
+BuildRequires:  python2-devel
 
-Requires:       numpy
-Requires:       python-oslo-config
-Requires:       python-oslo-sphinx
-Requires:       python-oslo-messaging
-Requires:       python-pandas
-Requires:       python-flask
-Requires:       python-swiftclient
-Requires:       python-pecan
-Requires:       python-futures
-Requires:       python-requests
-Requires:	python-six
-Requires:	python-sqlalchemy
-Requires:	python-stevedore
-Requires:	python-voluptuous
-Requires:	python-werkzeug
-Requires:	python-jinja2
-Requires:	PyYAML
-Requires:	python-sysv_ipc
-Requires:	python-msgpack
-Requires:	python-trollius
-Requires:       python-retrying
-Requires:       pytz
-
-#TODO: tooz, pytimeparse, future, oslo.db, oslo.utils, oslo.serialization
+#TODO: pytimeparse
 
 %description
 HTTP API to store metrics and index resources.
 
+%package -n     python-gnocchi
+Summary:        OpenStack gnocchi python libraries
+Group:          Applications/System
+
+Requires:       numpy
+Requires:       python-flask
+Requires:       python-futures
+Requires:	python-jinja2
+Requires:	python-msgpack
+Requires:       python-oslo-config
+Requires:       python-oslo-db
+Requires:       python-oslo-log
+Requires:       python-oslo-policy
+Requires:       python-oslo-sphinx
+Requires:       python-oslo-serialization
+Requires:       python-oslo-utils
+Requires:       python-pandas
+Requires:       python-pecan
+Requires:       python-retrying
+Requires:       python-requests
+Requires:       python-swiftclient
+Requires:	python-six
+Requires:	python-sqlalchemy
+Requires:	python-stevedore
+Requires:	python-sysv_ipc
+Requires:       python-tooz
+Requires:	python-trollius
+Requires:	python-voluptuous
+Requires:	python-werkzeug
+Requires:       pytz
+Requires:	PyYAML
+
+%description -n   python-gnocchi
+OpenStack gnocchi provides API to store metrics from OpenStack components
+and index resources.
+
+This package contains the gnocchi python library.
+
+
+%package        api
+
+Summary:        OpenStack gnocchi api
+Group:          Applications/System
+
+Requires:       python-gnocchi = %{version}-%{release}
+
+Requires:       python-flask
+Requires:       python-jinja2
+Requires:       python-keystonemiddleware
+Requires:       python-oslo-db
+Requires:       python-oslo-policy
+Requires:       python-oslo-utils
+Requires:       python-oslo-serialization
+Requires:       python-pecan
+Requires:       python-requests
+Requires:       python-six
+Requires:       python-stevedore
+Requires:       python-voluptuous
+Requires:       python-werkzeug
+Requires:       PyYAML
+
+%description api
+OpenStack gnocchi provides API to store metrics from OpenStack components
+and index resources.
+
+This package contains the gnocchi API service.
+
+%package        carbonara
+
+Summary:        OpenStack gnocchi carbonara
+Group:          Applications/System
+
+Requires:       python-gnocchi = %{version}-%{release}
+
+Requires:       python-futures
+Requires:       python-msgpack
+Requires:       python-oslo-utils
+Requires:       python-pandas
+Requires:       python-retrying
+Requires:       python-swiftclient
+Requires:       python-tooz
+
+%description carbonara
+OpenStack gnocchi provides API to store metrics from OpenStack
+components and index resources.
+
+This package contains the gnocchi carbonara backend including swift,ceph and
+file service.
+
+
+%package        indexer-sqlalchemy
+
+Summary:        OpenStack gnocchi indexer sqlalchemy driver
+Group:          Applications/System
+
+Requires:       python-gnocchi = %{version}-%{release}
+
+Requires:       python-oslo-db
+Requires:       python-oslo-utils
+Requires:       python-sqlalchemy
+Requires:       python-swiftclient
+Requires:       python-stevedore
+Requires:       pytz
+
+%description indexer-sqlalchemy
+OpenStack gnocchi provides API to store metrics from OpenStack
+components and index resources.
+
+This package contains the gnocchi indexer with sqlalchemy driver.
+
+
+%package        statsd
+
+Summary:        OpenStack gnocchi statsd daemon
+Group:          Applications/System
+
+Requires:       python-gnocchi = %{version}-%{release}
+
+Requires:       python-oslo-log
+Requires:       python-oslo-utils
+Requires:       python-trollius
+Requires:       python-six
+
+%description statsd
+OpenStack gnocchi provides API to store metrics from OpenStack
+components and index resources.
+
+This package contains the gnocchi statsd daemon
+
+%if 0%{?with_doc}
+%package doc
+Summary:          Documentation for OpenStack gnocchi
+Group:            Documentation
+
+# Required to build module documents
+BuildRequires:    python-eventlet
+BuildRequires:    python-sqlalchemy
+BuildRequires:    python-webob
+# while not strictly required, quiets the build down when building docs.
+BuildRequires:    python-mock
+#BuildRequires:    python-keystonemiddleware
+# we're missing this dependency, for now pip install oslotest
+#BuildRequires:    python-oslotest
+
+%description      doc
+OpenStack gnocchi provides services to measure and
+collect metrics from OpenStack components.
+
+This package contains documentation files for gnocchi.
+%endif
+
+
 %prep
-%setup -q
+#%setup -q
+
+%setup -q -n gnocchi-%{version}
+
+find . \( -name .gitignore -o -name .placeholder \) -delete
+
+find gnocchi -name \*.py -exec sed -i '/\/usr\/bin\/env python/{d;q}' {} +
+
+sed -i '/setup_requires/d; /install_requires/d; /dependency_links/d' setup.py
+
+rm -rf {test-,}requirements.txt tools/{pip,test}-requires
+
 
 %build
 
 %{__python} setup.py build
 
+install -p -D -m 640 %{SOURCE2} etc/gnocchi/gnocchi.conf.sample
+
+while read name eq value; do
+  test "$name" && test "$value" || continue
+  sed -i "0,/^# *$name=/{s!^# *$name=.*!#$name=$value!}" etc/gnocchi/gnocchi.conf.sample
+done < %{SOURCE1}
+
+
 %install
 rm -rf %{buildroot}
 
-mkdir -p %{buildroot}/%{_sysconfdir}/gnocchi/
 %{__python} setup.py install --skip-build --root %{buildroot}
+
 mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig/
 mkdir -p %{buildroot}/%{_sysconfdir}/gnocchi/
+mkdir -p %{buildroot}/%{_sysconfdir}/ceilometer/
 mkdir -p %{buildroot}/%{_var}/log/%{name}
+
+# docs generation requires everything to be installed first
+export PYTHONPATH="$( pwd ):$PYTHONPATH:"
+
+%if 0%{?with_doc}
+export GNOCCHI_TEST_STORAGE_DRIVER=file
+doc8 --ignore-path doc/source/rest.rst doc/source
+sh ./setup-postgresql-tests.sh python setup.py build_sphinx
+%endif
+
+install -p -D -m 640 etc/gnocchi/gnocchi.conf.sample %{buildroot}%{_sysconfdir}/gnocchi/gnocchi.conf
 
 # Configuration
 cp -R etc/gnocchi/policy.json %{buildroot}/%{_sysconfdir}/gnocchi
+cp -R etc/ceilometer/gnocchi_archive_policy_map.yaml %{buildroot}/%{_sysconfdir}/ceilometer
 
 %clean
 rm -rf %{buildroot}
 
 
-%files
-%defattr(-,root,root,-)
-%doc doc/source/*
-%config(noreplace) %{_sysconfdir}/gnocchi/policy.json
+%files -n python-gnocchi
 %{python_sitelib}/gnocchi
-%{python_sitelib}/*.egg-info
+%{python_sitelib}/gnocchi-%{version}*.egg-info
+
+%files api
+%defattr(-,root,root,-)
+%dir %{_sysconfdir}/gnocchi
+%config(noreplace) %{_sysconfdir}/gnocchi/policy.json
+%config(noreplace) %{_sysconfdir}/gnocchi/gnocchi.conf
+%config(noreplace) %{_sysconfdir}/ceilometer/gnocchi_archive_policy_map.yaml
+%{_bindir}/gnocchi-api
+
+%files carbonara
 %{_bindir}/carbonara-create
 %{_bindir}/carbonara-dump
 %{_bindir}/carbonara-update
-%{_bindir}/gnocchi-api
+
+%files indexer-sqlalchemy
 %{_bindir}/gnocchi-dbsync
+
+%files statsd
 %{_bindir}/gnocchi-statsd
+
+%if 0%{?with_doc}
+%files doc
+%doc doc/build/html/*
+%endif
 
 
 %changelog
