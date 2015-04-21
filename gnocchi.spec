@@ -4,8 +4,7 @@
 %global with_doc %{!?_without_doc:1}%{?_without_doc:0}
 
 Name:           openstack-gnocchi
-Version:	1.0.0a1.post94
-#Version:	1.0.0a1
+Version:	1.0.0c1
 Release:	1%{?dist}
 Summary:        Gnocchi is a API to store metrics and index resources
 
@@ -13,7 +12,6 @@ Group:		Development/Languages
 License:	APL 2.0
 URL:		http://github.com/openstack/gnocchi
 Source0:	https://pypi.python.org/packages/source/g/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
-#Source0:        gnocchi-1.0.0a1.post94.tar.gz
 Source1:        %{pypi_name}-dist.conf
 Source2:        %{pypi_name}.conf.sample
 BuildArch:      noarch
@@ -23,7 +21,6 @@ BuildRequires:  python-sphinx
 BuildRequires:  python-pbr
 BuildRequires:  python2-devel
 
-#TODO: pytimeparse
 
 %description
 HTTP API to store metrics and index resources.
@@ -59,6 +56,7 @@ Requires:	python-voluptuous
 Requires:	python-werkzeug
 Requires:       pytz
 Requires:	PyYAML
+#TODO: Requires: pytimeparse, SQLAlchemy-Utils, python-oslo-db == 1.7, python-keystonemiddleware > 1.5, python-oslo-policy (on koji), pandas >= 0.15
 
 %description -n   python-gnocchi
 OpenStack gnocchi provides API to store metrics from OpenStack components
@@ -162,15 +160,35 @@ This package contains the gnocchi statsd daemon
 Summary:          Documentation for OpenStack gnocchi
 Group:            Documentation
 
+Requires:         python-gnocchi = %{version}-%{release}
+
 # Required to build module documents
+BuildRequires:    python-mock
 BuildRequires:    python-eventlet
 BuildRequires:    python-sqlalchemy
 BuildRequires:    python-webob
-# while not strictly required, quiets the build down when building docs.
 BuildRequires:    python-mock
-#BuildRequires:    python-keystonemiddleware
+BuildRequires:    python-six
+BuildRequires:    PyYAML
+BuildRequires:    postgresql-server
+BuildRequires:    python-oslo-utils
+BuildRequires:    python-testscenarios
+BuildRequires:    python-oslo-log
+BuildRequires:    python-voluptuous
+BuildRequires:    python-werkzeug
+BuildRequires:    python-flask
+BuildRequires:    python-futures
+BuildRequires:    python-tooz
+BuildRequires:    python-pandas
+BuildRequires:    python-swiftclient
+BuildRequires:    python-psycopg2
 # we're missing this dependency, for now pip install oslotest
 #BuildRequires:    python-oslotest
+#BuildRequires:    python-keystonemiddleware > 1.5
+# BuildRequires:    python-oslo-policy (on koji)
+#BuildRequires:    python-oslo-db == 1.7
+#BuildRequires:     python-sqlalchemy-utils (pip SQLAlchemy-Utils)
+#BuildRequires:   python-pandas >= 0.15
 
 %description      doc
 OpenStack gnocchi provides services to measure and
@@ -221,7 +239,7 @@ export PYTHONPATH="$( pwd ):$PYTHONPATH:"
 
 %if 0%{?with_doc}
 export GNOCCHI_TEST_STORAGE_DRIVER=file
-doc8 --ignore-path doc/source/rest.rst doc/source
+#doc8 --ignore-path doc/source/rest.rst doc/source
 sh ./setup-postgresql-tests.sh python setup.py build_sphinx
 %endif
 
@@ -234,6 +252,12 @@ cp -R etc/ceilometer/gnocchi_archive_policy_map.yaml %{buildroot}/%{_sysconfdir}
 %clean
 rm -rf %{buildroot}
 
+
+%post -n %{name}-api
+%systemd_post %{name}-api.service
+
+%preun -n %{name}-api
+%systemd_preun %{name}-api.service
 
 %files -n python-gnocchi
 %{python_sitelib}/gnocchi
@@ -265,7 +289,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Mon Apr 13 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0a1-1
+* Mon Apr 21 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0c1-1
 - initial package release
 
 
