@@ -162,34 +162,6 @@ Group:            Documentation
 
 Requires:         python-gnocchi = %{version}-%{release}
 
-# Required to build module documents
-BuildRequires:    python-mock
-BuildRequires:    python-eventlet
-BuildRequires:    python-sqlalchemy
-BuildRequires:    python-webob
-BuildRequires:    python-mock
-BuildRequires:    python-six
-BuildRequires:    PyYAML
-BuildRequires:    postgresql-server
-BuildRequires:    python-oslo-utils
-BuildRequires:    python-testscenarios
-BuildRequires:    python-oslo-log
-BuildRequires:    python-voluptuous
-BuildRequires:    python-werkzeug
-BuildRequires:    python-flask
-BuildRequires:    python-futures
-BuildRequires:    python-tooz
-BuildRequires:    python-pandas
-BuildRequires:    python-swiftclient
-BuildRequires:    python-psycopg2
-# we're missing this dependency, for now pip install oslotest
-#BuildRequires:    python-oslotest
-#BuildRequires:    python-keystonemiddleware > 1.5
-# BuildRequires:    python-oslo-policy (on koji)
-#BuildRequires:    python-oslo-db == 1.7
-#BuildRequires:     python-sqlalchemy-utils (pip SQLAlchemy-Utils)
-#BuildRequires:   python-pandas >= 0.15
-
 %description      doc
 OpenStack gnocchi provides services to measure and
 collect metrics from OpenStack components.
@@ -199,8 +171,6 @@ This package contains documentation files for gnocchi.
 
 
 %prep
-#%setup -q
-
 %setup -q -n gnocchi-%{version}
 
 find . \( -name .gitignore -o -name .placeholder \) -delete
@@ -234,16 +204,9 @@ mkdir -p %{buildroot}/%{_sysconfdir}/gnocchi/
 mkdir -p %{buildroot}/%{_sysconfdir}/ceilometer/
 mkdir -p %{buildroot}/%{_var}/log/%{name}
 
-# docs generation requires everything to be installed first
-export PYTHONPATH="$( pwd ):$PYTHONPATH:"
-
-%if 0%{?with_doc}
-export GNOCCHI_TEST_STORAGE_DRIVER=file
-#doc8 --ignore-path doc/source/rest.rst doc/source
-sh ./setup-postgresql-tests.sh python setup.py build_sphinx
-%endif
-
 install -p -D -m 640 etc/gnocchi/gnocchi.conf.sample %{buildroot}%{_sysconfdir}/gnocchi/gnocchi.conf
+
+#TODO(prad): build the docs at run time, once the we get rid of postgres setup dependency
 
 # Configuration
 cp -R etc/gnocchi/policy.json %{buildroot}/%{_sysconfdir}/gnocchi
@@ -284,12 +247,12 @@ rm -rf %{buildroot}
 
 %if 0%{?with_doc}
 %files doc
-%doc doc/build/html/*
+%doc doc/source/
 %endif
 
 
 %changelog
-* Mon Apr 21 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0c1-1
+* Mon Apr 22 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0c1-1
 - initial package release
 
 
