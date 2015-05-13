@@ -1,19 +1,15 @@
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 %global pypi_name gnocchi
 %global with_doc %{!?_without_doc:1}%{?_without_doc:0}
 
 Name:           openstack-gnocchi
-Version:	1.0.0c1
+Version:	1.0.0
 Release:	1%{?dist}
 Summary:        Gnocchi is a API to store metrics and index resources
 
-Group:		Development/Languages
 License:	APL 2.0
 URL:		http://github.com/openstack/gnocchi
 Source0:	https://pypi.python.org/packages/source/g/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
-Source1:        %{pypi_name}-dist.conf
-Source2:        %{pypi_name}.conf.sample
+Source1:        %{pypi_name}.conf.sample
 BuildArch:      noarch
 
 BuildRequires:	python-setuptools
@@ -27,12 +23,12 @@ HTTP API to store metrics and index resources.
 
 %package -n     python-gnocchi
 Summary:        OpenStack gnocchi python libraries
-Group:          Applications/System
 
 Requires:       numpy
 Requires:       python-flask
 Requires:       python-futures
 Requires:	python-jinja2
+Requires:       python-keystonemiddleware
 Requires:	python-msgpack
 Requires:       python-oslo-config
 Requires:       python-oslo-db
@@ -43,11 +39,13 @@ Requires:       python-oslo-serialization
 Requires:       python-oslo-utils
 Requires:       python-pandas
 Requires:       python-pecan
+Requires:       python-pytimeparse
 Requires:       python-retrying
 Requires:       python-requests
 Requires:       python-swiftclient
 Requires:	python-six
 Requires:	python-sqlalchemy
+Requires:       python-sqlalchemy-utils
 Requires:	python-stevedore
 Requires:	python-sysv_ipc
 Requires:       python-tooz
@@ -56,7 +54,7 @@ Requires:	python-voluptuous
 Requires:	python-werkzeug
 Requires:       pytz
 Requires:	PyYAML
-#TODO: Requires: pytimeparse, SQLAlchemy-Utils, python-oslo-db == 1.7, python-keystonemiddleware > 1.5, python-oslo-policy (on koji), pandas >= 0.15
+
 
 %description -n   python-gnocchi
 OpenStack gnocchi provides API to store metrics from OpenStack components
@@ -68,7 +66,6 @@ This package contains the gnocchi python library.
 %package        api
 
 Summary:        OpenStack gnocchi api
-Group:          Applications/System
 
 Requires:       python-gnocchi = %{version}-%{release}
 
@@ -80,9 +77,13 @@ Requires:       python-oslo-policy
 Requires:       python-oslo-utils
 Requires:       python-oslo-serialization
 Requires:       python-pecan
+Requires:       python-pytimeparse
 Requires:       python-requests
 Requires:       python-six
+Requires:	python-sqlalchemy
+Requires:       python-sqlalchemy-utils
 Requires:       python-stevedore
+Requires:       python-tooz
 Requires:       python-voluptuous
 Requires:       python-werkzeug
 Requires:       PyYAML
@@ -96,7 +97,6 @@ This package contains the gnocchi API service.
 %package        carbonara
 
 Summary:        OpenStack gnocchi carbonara
-Group:          Applications/System
 
 Requires:       python-gnocchi = %{version}-%{release}
 
@@ -119,7 +119,6 @@ file service.
 %package        indexer-sqlalchemy
 
 Summary:        OpenStack gnocchi indexer sqlalchemy driver
-Group:          Applications/System
 
 Requires:       python-gnocchi = %{version}-%{release}
 
@@ -140,7 +139,6 @@ This package contains the gnocchi indexer with sqlalchemy driver.
 %package        statsd
 
 Summary:        OpenStack gnocchi statsd daemon
-Group:          Applications/System
 
 Requires:       python-gnocchi = %{version}-%{release}
 
@@ -158,7 +156,6 @@ This package contains the gnocchi statsd daemon
 %if 0%{?with_doc}
 %package doc
 Summary:          Documentation for OpenStack gnocchi
-Group:            Documentation
 
 Requires:         python-gnocchi = %{version}-%{release}
 
@@ -184,20 +181,13 @@ rm -rf {test-,}requirements.txt tools/{pip,test}-requires
 
 %build
 
-%{__python} setup.py build
+%{__python2} setup.py build
 
-install -p -D -m 640 %{SOURCE2} etc/gnocchi/gnocchi.conf.sample
-
-while read name eq value; do
-  test "$name" && test "$value" || continue
-  sed -i "0,/^# *$name=/{s!^# *$name=.*!#$name=$value!}" etc/gnocchi/gnocchi.conf.sample
-done < %{SOURCE1}
-
+install -p -D -m 640 %{SOURCE1} etc/gnocchi/gnocchi.conf.sample
 
 %install
-rm -rf %{buildroot}
 
-%{__python} setup.py install --skip-build --root %{buildroot}
+%{__python2} setup.py install --skip-build --root %{buildroot}
 
 mkdir -p %{buildroot}/%{_sysconfdir}/sysconfig/
 mkdir -p %{buildroot}/%{_sysconfdir}/gnocchi/
@@ -212,10 +202,6 @@ install -p -D -m 640 etc/gnocchi/gnocchi.conf.sample %{buildroot}%{_sysconfdir}/
 cp -R etc/gnocchi/policy.json %{buildroot}/%{_sysconfdir}/gnocchi
 cp -R etc/ceilometer/gnocchi_archive_policy_map.yaml %{buildroot}/%{_sysconfdir}/ceilometer
 
-%clean
-rm -rf %{buildroot}
-
-
 %post -n %{name}-api
 %systemd_post %{name}-api.service
 
@@ -223,8 +209,8 @@ rm -rf %{buildroot}
 %systemd_preun %{name}-api.service
 
 %files -n python-gnocchi
-%{python_sitelib}/gnocchi
-%{python_sitelib}/gnocchi-%{version}*.egg-info
+%{python2_sitelib}/gnocchi
+%{python2_sitelib}/gnocchi-*.egg-info
 
 %files api
 %defattr(-,root,root,-)
@@ -252,7 +238,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Mon Apr 22 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0c1-1
+* Mon Apr 27 2015 Pradeep Kilambi <pkilambi@redhat.com> 1.0.0-1
 - initial package release
 
 
